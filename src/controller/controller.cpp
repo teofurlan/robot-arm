@@ -15,6 +15,11 @@
 #include <esp_now.h>
 #include "Joystick.h"
 
+// --- CONFIGURACIÓN LED RGB (Cátodo Común) ---
+const int pinR = 18;
+const int pinG = 19;
+const int pinB = 17;
+
 // Receiver MAC Address (replace with your robot's MAC address)
 // uint8_t receiverAddress[] = {0xA4, 0xF0, 0x0F, 0x69, 0xBB, 0xBC};
 uint8_t receiverAddress[] = {0x84, 0x1F, 0xE8, 0x26, 0x5A, 0x04};
@@ -61,6 +66,32 @@ esp_now_peer_info_t peerInfo;
 // =======================================================
 // FUNCTIONS
 // =======================================================
+
+// =======================================================
+// FUNCIÓN PARA CONTROLAR EL LED
+// =======================================================
+void actualizarLED(int r, int g, int b) {
+  // Forzamos que los otros pines se apaguen ANTES de encender el nuevo
+  analogWrite(pinR, r);
+  analogWrite(pinG, g);
+  analogWrite(pinB, b);
+}
+
+
+// =======================================================
+// CALLBACK DE ENVÍO: Aquí detectamos la conexión real
+// =======================================================
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  Serial.print("\r\nStatus de entrega: ");
+  if (status == ESP_NOW_SEND_SUCCESS) {
+    Serial.println("ÉXITO");
+    actualizarLED(0, 0, 255); // Azul
+  } else {
+    Serial.println("FALLO");
+    actualizarLED(255, 0, 0); // Rojo
+  }
+}
+
 
 /**
  * sendData() - Reads the current state of the joysticks and potentiometer, constructs a data packet, and sends it to the robot using ESP-NOW.
@@ -113,6 +144,14 @@ void setup()
 {
   // Begin Serial communication for debugging and having feedback
   Serial.begin(115200);
+  // Configuración de pines LED
+  pinMode(pinR, OUTPUT);
+  pinMode(pinG, OUTPUT);
+  pinMode(pinB, OUTPUT);
+  
+  // Color inicial (Naranja/Amarillo) indicando "Iniciando..."
+  actualizarLED(0, 255, 0);
+
   // Configure button pins with pull-up resistors
   pinMode(UP_JOY_BUTTON, INPUT_PULLUP);
   pinMode(LOW_JOY_BUTTON, INPUT_PULLUP);
@@ -131,8 +170,12 @@ void setup()
   if (esp_now_init() != ESP_OK)
   {
     Serial.println("Error inicializando ESP-NOW");
+    actualizarLED(255, 0, 0);
     return;
   };
+
+ // Forzamos al compilador a aceptar el formato de la función
+  esp_now_register_send_cb((esp_now_send_cb_t)OnDataSent);
 
   memcpy(peerInfo.peer_addr, receiverAddress, 6);
   peerInfo.channel = 0; // use current Wi-Fi channel
@@ -144,6 +187,7 @@ void setup()
     return;
   }
   Serial.println("ESP-NOW Iniciado y emparejado.");
+  actualizarLED(0, 0, 255);
 }
 
 // MAIN LOOP
