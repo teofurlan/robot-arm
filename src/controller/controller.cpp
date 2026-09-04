@@ -109,9 +109,9 @@ void sendData()
 
   static int lastValidPot = -1; // Store the last valid potentiometer value to implement a simple noise filter
   const int POT_THRESHOLD = 3;  // Tolerance: only update if the change is greater than this threshold to avoid noise
-  // Read raw potentiometer value and map it to 0-180 range
+  // Read raw potentiometer value and map it to 0-85 range
   int rawPot = analogRead(POT_PIN);
-  int currentPot = map(rawPot, 0, 4095, 0, 180);
+  int currentPot = map(rawPot, 0, 4095, 0, 85);
   // Check if the change in potentiometer value exceeds the threshold
   if (lastValidPot == -1 || abs(currentPot - lastValidPot) >= POT_THRESHOLD)
   {
